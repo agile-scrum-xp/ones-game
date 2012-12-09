@@ -28,18 +28,67 @@ body
     margin: 10px 10px 10px 0;
 }
 
-.expandTD 
+.expandTD
 {
-   font-size:medium;
-   background-color:White;
+    font-size: medium;
+    background-color: White;
 }
 
-.revertTD 
+.revertTD
 {
     width: 70px;
     height: 70px;
 }
 
-td {
-  vertical-align: top;
+
+table
+{
+    
+    border-top: 1px solid #e5eff8;
+    border-right: 1px solid #e5eff8;
+    border-left: 1px solid #e5eff8;
+    border-bottom: 1px solid #e5eff8;
+    margin: 1em auto;    
+    border-radius:6px;
+    -moz-border-radius:6px;
+
 }
+
+td 
+{       
+    border-top: 1px solid #e5eff8;
+    border-right: 1px solid #e5eff8;
+    border-left: 1px solid #e5eff8;
+    border-bottom: 1px solid #e5eff8;
+    text-align: center;
+    vertical-align: top;
+    border-radius:6px;
+    -moz-border-radius:6px;
+}
+
+.roller
+{
+    display: block;
+    width: 90%;
+}
+
+.button {
+    -moz-border-bottom-colors: none;
+    -moz-border-left-colors: none;
+    -moz-border-right-colors: none;
+    -moz-border-top-colors: none;
+    border-color: #CCCCCC #CCCCCC #AAAAAA;
+    border-image: none;
+    border-radius: 3px 3px 3px 3px;
+    border-style: solid;
+    border-width: 1px;
+    box-shadow: 0 0 1px #FFFFFF inset;
+    display: inline-block;
+    font-size: 14px;
+    font-weight: bold;
+    padding: 5px 15px;
+    text-decoration: none;
+	font-family: Arial, Helvetica, sans-serif;
+}
+
+.round {border-radius: 50px}

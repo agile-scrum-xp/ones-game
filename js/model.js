@@ -119,17 +119,6 @@ function findAndUpdateTask(taskID, nextTeamID) {
     return null;
 }
 
-/*
-table
-tr
-td
-table backlog
-td
-table work in progress
-td
-table done
-
-*/
 function teamVisualObject() {
     var visualObject = "";
     this.Backlog();
@@ -154,7 +143,7 @@ function teamVisualObject() {
     visualObject = visualObject + "<tr>";
     visualObject = visualObject + "<th>" + "Backlog" + "</th>";
     visualObject = visualObject + "<th>" + "Work In Progress" + "</th>";
-    visualObject = visualObject + "<th>" + "Done" + "</th>";
+    visualObject = visualObject + "<th>" + "Task Done" + "</th>";
     visualObject = visualObject + "</tr>";
 
     visualObject = visualObject + "<tr>";
@@ -162,7 +151,7 @@ function teamVisualObject() {
     visualObject = visualObject + getVisualObjectOfBacklog(this.teamID, this.backlogTasksArray, this.teamColour);
     visualObject = visualObject + "</td>";
     visualObject = visualObject + "<td>";
-    visualObject = visualObject + getVisualObjectofTasksDone(this.teamID, this.workInProgressTasksArray, this.teamColour);
+    visualObject = visualObject + getVisualObjectofTasksWIP(this.teamID, this.workInProgressTasksArray, this.teamColour);
     visualObject = visualObject + "</td>";
     visualObject = visualObject + "<td>";
     visualObject = visualObject + getVisualObjectofTasksDone(this.teamID, this.doneTasksArray, this.teamColour);
@@ -177,15 +166,34 @@ function teamVisualObject() {
 function getVisualObjectOfBacklog(teamID, backlogArray, teamColour) {
     var visualObject = "";
     var tempTDObject = "";
-    visualObject = visualObject + "<table width='80' id='" + teamID + "_backlog'>";
+    visualObject = visualObject + "<table id='" + teamID + "_backlog'>";
 
     for (var backlogCounter = 0; backlogCounter < backlogArray.length; backlogCounter++) {
         var tempTask = backlogArray[backlogCounter];
         visualObject = visualObject + "<tr>";
 
-        tempTDObject = "<td width='60' height='40'  align='center' bgcolor='" + teamColour + "' class='droppable' id='cell_" + teamID + "_" + tempTask.taskID + "'>" + tempTask.maximumEstimatedUnits + "</td>";
+        tempTDObject = "<td width='60' height='30'  align='center' bgcolor='" + teamColour + "' class='droppable' id='cell_" + teamID + "_" + tempTask.taskID + "'>" + tempTask.maximumEstimatedUnits + "</td>";
         //makeTaskDroppable(tempTDObject);
         visualObject = visualObject + tempTDObject;
+        visualObject = visualObject + "</tr>";
+    }
+    visualObject = visualObject + "</table>"
+
+    return visualObject;
+}
+
+function getVisualObjectofTasksWIP(teamID, doneTasksArray, teamColour) {
+    var visualObject = "";
+    var tempTDObject = "";
+    visualObject = visualObject + "<table id='" + teamID + "_done'>";
+
+    for (var doneCounter = 0; doneCounter < doneTasksArray.length; doneCounter++) {
+        var tempTask = doneTasksArray[doneCounter];
+        visualObject = visualObject + "<tr>";
+
+        tempTDObject = "<td width='60' height='30'  align='center' bgcolor='" + teamColour + "' class='droppable' id='cell_" + teamID + "_" + tempTask.taskID + "'>(" + tempTask.numberOfUnitsCompleted + ", " + tempTask.maximumEstimatedUnits + ")</td>";
+
+        visualObject = visualObject +  tempTDObject;
         visualObject = visualObject + "</tr>";
     }
     visualObject = visualObject + "</table>"
@@ -196,15 +204,15 @@ function getVisualObjectOfBacklog(teamID, backlogArray, teamColour) {
 function getVisualObjectofTasksDone(teamID, doneTasksArray, teamColour) {
     var visualObject = "";
     var tempTDObject = "";
-    visualObject = visualObject + "<table width='80' id='" + teamID + "_done'>";
+    visualObject = visualObject + "<table id='" + teamID + "_done'>";
 
     for (var doneCounter = 0; doneCounter < doneTasksArray.length; doneCounter++) {
         var tempTask = doneTasksArray[doneCounter];
         visualObject = visualObject + "<tr>";
 
-        tempTDObject = "<td width='60' height='40'  align='center' bgcolor='" + teamColour + "' class='droppable' id='cell_" + teamID + "_" + tempTask.taskID + "'>(" + tempTask.numberOfUnitsCompleted + ", " + tempTask.maximumEstimatedUnits + ")</td>";
+        tempTDObject = "<td width='60' height='30'  align='center' bgcolor='" + teamColour + "' class='droppable' id='cell_" + teamID + "_" + tempTask.taskID + "'>" + tempTask.maximumEstimatedUnits + "</td>";
 
-        visualObject = visualObject + "<td>" + tempTDObject;
+        visualObject = visualObject  + tempTDObject;
         visualObject = visualObject + "</tr>";
     }
     visualObject = visualObject + "</table>"
@@ -315,6 +323,8 @@ function velocityVisualObject() {
 }
 
 function updateTeamTask(teamID, taskID) {
+   
+
     for (i = 0; i < this.teamsArray.length; i++) {
         var tempTeam = this.teamsArray[i];
         if (tempTeam.teamID == teamID) {
@@ -333,9 +343,10 @@ function updateTeamTask(teamID, taskID) {
                 // Activity is done in the last team
                 var taskReturn = tempTeam.FindAndTask(taskID, null);
 
+               
                 // activity was on "Done" task so move it to finsih array
                 if (taskReturn != null && taskReturn.taskID == taskID) {
-
+                    //alert(teamID + "  " + taskID);
                     // No matter which activity it is in current sprint
                     this.currentSprintVelocity.UpdateTaskFinished(taskReturn.maximumEstimatedUnits);
 

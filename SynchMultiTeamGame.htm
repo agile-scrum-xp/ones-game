@@ -1,17 +1,21 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-    <title>Multi-player Ones Game</title>
-    
+    <title>Synchronised Multi-player One's Game</title>    
     <link rel="stylesheet" href="css/default.css" />
     <script src="js/jquery-1.8.3.js" type="text/javascript"></script>
     <script src="js/jquery-ui-1.9.2.custom.js" type="text/javascript"></script>
     <script src="js/model.js" type="text/javascript"></script>
     <script src="js/utility.js" type="text/javascript"></script>
+
     <script type="text/javascript">
+
+        var newGameTeamNumber = 4; 
         var onesGame = null;
         var updateElement = "#gameSnapshot";
         var newGame = true;
+
+        var synchGame = true;
         var oneDice = 0;
 
         var onceDiceArray = new Array();
@@ -31,50 +35,47 @@
 
                 $('.roller').removeAttr('disabled');
                 oneDice = 0;
-                createGame(updateElement, 4);
+                createGame(updateElement, newGameTeamNumber);
                 newGame = false;
                 createDivForTeams();
-                $('#gameSnapshotHeader').attr('colspan', '4');
+                $('#gameSnapshotHeader').attr('colspan', newGameTeamNumber);
 
-                //$('#gameSnapshotHeader').text("Game Snapshot");
-                //addVisualTeams();
+                //diceRollerHeader
+                $('#diceRollerHeader').attr('colspan', newGameTeamNumber - 1);
+
+                if (synchGame == false) {
+                    $("#diceRollerButton").attr('disabled', 'disabled');
+                    $("#resetButton").attr('disabled', 'disabled');
+                }
+            });
+
+            //resetButtonHeader
+            $('#resetButton').click(function () {
+                oneDice = 0;
+                $("#diceRollerButton").removeAttr('disabled');
+
             });
 
             $('button.roller').live("click", function (event) {
-
-                // ID of the parent div surrounding the button
-                // which generated event
-                var parentID = $(this).parent().attr("id");
-
-                var cellIDSplitArray = parentID.split("_");
-                //alert($("#" + parentID + ' _button').attr("class"));
-                //alert(cellIDSplitArray);
-
-                // Update the tag with dice 
-                // div with id #team-1 containing p with id #dice
-                var updateElement = "#" + parentID + "_dice";
-                //alert('button.roller' + updateElement);
-                updateDice(updateElement, dieRoll(Math.floor(Math.random() * 7) + 1));
-
-                updateElement = "#" + parentID + " #team_table";
-
-                //alert("roll1 clicked " + newGame);
-                if (newGame == true) {
-                    createGame(updateElement, 2);
-                    newGame = false;
+                           
+               
+                if (synchGame == true) {
+                    synchDiceRolling();
+                } else {
+                    // ID of the button
+                    // which generated event   
+                    var sourceButtonID = "#" + $(this).attr("id");
+                    nonSynchDiceRolling(sourceButtonID);
                 }
 
-                /**/
-                if (onceDiceArray.length - 1 == cellIDSplitArray[2]) {
-                    onesGame.LastTeamActivityCounter();
-                }
-
-                //alert(onceDiceArray[cellIDSplitArray[2]]);
-                if (onceDiceArray[cellIDSplitArray[2]] > 0) {
-                    $(this).attr('disabled', 'disabled');
-                }
             });
-
+            /*
+            $('#diceRollerButton').live("click", function (event) {
+            var sourceButtonID = "#" + $(this).attr("id");
+            alert(sourceButtonID);
+            synchDiceRolling();
+            });
+            */
             // This is key to make dynamically created elements draggable
             $('img.one').live('mouseenter', function () {
                 var parentID = $(this).parent().parent().attr("id");
@@ -93,21 +94,61 @@
             });
         });
 
-        /*
-        <td>
-        <div id="team_1">
-        <button id="roll" type="button" class="roller">
-        Roll Dice</button>
-        <p id="dice"/>
-        <p id="team_table"/>
-        </div>
-        </td>
-        <td>
-        <div id="finishedTasks">
-        <p id="finished_table"/>
-        </div>
-        </td>
-        */
+        function nonSynchDiceRolling(sourceButtonID) {
+            var parentID = $(sourceButtonID).parent().attr("id"); ;
+
+            var cellIDSplitArray = parentID.split("_");
+            //alert($("#" + parentID + ' _button').attr("class"));
+            
+
+            // Update the tag with dice 
+            // div with id #team_1 containing p with id #dice
+            var updateElement = "#" + parentID + "_dice";
+            //alert('button.roller' + updateElement);
+            updateDice(updateElement, dieRoll(Math.floor(Math.random() * 7) + 1));
+
+            updateElement = "#" + parentID + " #team_table";
+
+            //alert("roll1 clicked " + newGame);
+            if (newGame == true) {
+                createGame(updateElement, 2);
+                newGame = false;
+            }
+
+            /**/
+            if (onceDiceArray.length - 1 == cellIDSplitArray[2]) {
+                onesGame.LastTeamActivityCounter();
+            }
+
+            //alert(onceDiceArray[cellIDSplitArray[2]]);
+            if (onceDiceArray[cellIDSplitArray[2]] > 0) {
+                $(sourceButtonID).attr('disabled', 'disabled');
+            }
+        }
+
+        function synchDiceRolling() {
+
+            var teamArrays = onesGame.Teams();
+            var baseId = "#div_team_";
+           // alert("# synchDiceRolling " + teamArrays.length);
+
+            for (var teamCounter=0; teamCounter < teamArrays.length; teamCounter++) {
+                baseId = baseId + teamCounter + "_dice";
+
+                //alert(baseId);
+                updateDice(baseId, dieRoll(Math.floor(Math.random() * 7) + 1));
+
+                baseId = "#div_team_";
+            }
+
+            // Increment the counter for each click
+                onesGame.LastTeamActivityCounter();            
+
+            if (oneDice > 0) {
+                $("#diceRollerButton").attr('disabled', 'disabled');
+            }
+        }
+
         function createDivForTeams() {
             var divForTeams = "";
 
@@ -123,8 +164,12 @@
 
                 divForTeams = divForTeams + "<p id='" + baseId + "_dice'/>";
 
-                divForTeams = divForTeams + "<button id='" + baseId + "_button' class='roller'>Roll Dice</button>";
-
+                if (synchGame == true) {
+                // do nothing
+                } else {
+                    divForTeams = divForTeams + "<button id='" + baseId + "_button' class='roller round button'>Roll Dice</button>";                   
+                }
+                
                 divForTeams = divForTeams + "<p id='" + baseId + "_team_table'/>";
 
                 // This was not adding table as sub element of p 
@@ -219,7 +264,7 @@
                 //alert(i + "  -->  " + diceArray[i]);
                 if (diceArray[i] == 1) {
                     htmlString = htmlString + "<img src='images/dice-" + diceArray[i] + "-th-W.png' alt='Smiley face' height='32' width='32' class='one'/>  ";
-                    //oneDice = oneDice + 1;
+                    oneDice = oneDice + 1;
                     onceDiceArray[cellIDSplitArray[2]] = onceDiceArray[cellIDSplitArray[2]] + 1;
                 } else {
                     htmlString = htmlString + "<img src='images/dice-" + diceArray[i] + "-th.png' alt='Smiley face' height='32' width='32'/>  ";
@@ -229,8 +274,8 @@
         }
 
         function createGame(team, numberOfTeams) {
-            //alert("create new Game");
             onesGame = new OnesGame();
+
             for (i = 0; i < numberOfTeams; i++) {
                 var tempTeam = createTeam(Math.floor(Math.random() * 10) + 1);
                 onesGame.AddTeam(tempTeam);
@@ -239,14 +284,7 @@
                 for (j = 0; j < randomBacklog; j++) {
                     tempTeam.AddTask(createTask());
                 }
-            }
-            //alert(game.Teams().length)
-            //alert(game.Visual());
-
-
-
-            //$(team).html(onesGame.Visual());
-            //updateDroppable(team);
+            }            
         }
 
         function createTeam(indexToGenerateTeamColour) {
@@ -265,15 +303,16 @@
 
                 hoverClass: "expandTD",
 
-                drop: function (event, ui) {
-                    oneDice = oneDice - 1;
-
-
+                drop: function (event, ui) { 
                     var cellIDSplitArray = $(this).attr("id").split("_");
                     //alert(cellIDSplitArray);
                     onceDiceArray[cellIDSplitArray[2]] = onceDiceArray[cellIDSplitArray[2]] - 1;
+                    oneDice = oneDice - 1;
 
+                    //alert(cellIDSplitArray);
                     onesGame.UpdateTeamTask(cellIDSplitArray[1] + "_" + cellIDSplitArray[2], cellIDSplitArray[3]);
+
+                    
                     //Changed
                     //$(team).html(onesGame.Visual());
                     addVisualTeams();
@@ -286,6 +325,13 @@
                     if (onceDiceArray[cellIDSplitArray[2]] < 1) {
                         $('#div_team_' + cellIDSplitArray[2] + '_button').removeAttr('disabled');
                     }
+
+                    if (synchGame == true) {
+                        if (oneDice < 1) {
+                            $("#diceRollerButton").removeAttr('disabled');
+                        }
+                    }
+                    
                 }
             });
         }
@@ -298,14 +344,24 @@
     <table>
         <tr>
             <th id="gameSnapshotHeader">
-                Game Snapshot
+                Game Snapshot of All Teams
             </th>
-            <th>
+            <th rowspan="2">
                 Finished Tasks
             </th>
-            <th>
+            <th rowspan="2">
                 Velocity
             </th>
+        </tr>
+        <tr>
+            <th id="diceRollerHeader" align="center">
+                <button id="diceRollerButton" type="button" class="roller button round" >
+                        Roll Dice</button>
+            </th>    
+            <th id="resetButtonHeader" align="center">
+                <button id="resetButton" type="button" class="round button">
+                        Reset Dice Roller</button>
+            </th>        
         </tr>
         <tr id="gameSnapshot">
             <!--
