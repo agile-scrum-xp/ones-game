@@ -324,7 +324,7 @@ function velocityVisualObject() {
 
 function updateTeamTask(teamID, taskID) {
    
-
+    //alert(teamID + "  " + taskID);
     for (i = 0; i < this.teamsArray.length; i++) {
         var tempTeam = this.teamsArray[i];
         if (tempTeam.teamID == teamID) {

@@ -9,7 +9,10 @@ body
     -moz-background-size: cover;
     -o-background-size: cover;
 }
-
+.one
+{
+	border-top: 1px solid red;
+}
 #droppable
 {
     width: 150px;

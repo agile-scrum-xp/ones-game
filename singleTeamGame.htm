@@ -2,11 +2,16 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
     <title>Single Team Game</title>
-    <link rel="stylesheet" href="css/default.css" />
-    <script src="js/jquery-1.8.3.js" type="text/javascript"></script>
-    <script src="js/jquery-ui-1.9.2.custom.js" type="text/javascript"></script>
+
+    <meta name="keywords" content="SCRUM, Agile, Kanban, Project Management, JavaScript, Ones Game"/>
+    <meta name="description" content="Free JavaScript Games to learn and practice Agile, SCRUM and KanBan concepts" />
+
+    <link href="css/default.css" rel="stylesheet" />
+    <script src="../js/jquery-1.8.3.js" type="text/javascript"></script>
+    <script src="../js/jquery-ui-1.9.2.custom.js" type="text/javascript"></script>
     <script src="js/model.js" type="text/javascript"></script>
     <script src="js/utility.js" type="text/javascript"></script>
+    
     <script type="text/javascript">
         var onesGame = null;
         var updateElement = "";
@@ -156,6 +161,8 @@
 </head>
 
 <body>
+    <h1 style=" text-align:center;">Ones Game</h1>
+    <h4><a href="index.html">Back to Main Page</a></h4>
     <button id="roll2" type="button" class="round button">
         New Game</button>
     <table>
@@ -192,6 +199,30 @@
         </tr>
     </table>
 
+    <h4>Ones Game</h4>
+This is the first game of the series. Rules of game are very simple:
+<ol>
+<li>Start a new game by clicking a button “New Game” on top left corner.</li>
+<li>Each team will have a set of dices.</li>
+<li>Each team will have random number of tasks in the backlog.</li>
+<li>Each task will take random number of work units to finish.</li>
+<li>The task with number 5 means it can be finished in 5 units of work.</li>
+<li>Tasks will move from “Backlog” to “Work in Progress” to “Done” state.</li>
+<li>Each team will roll dices by clicking “Roll Dice” button.</li>
+<li>The dice with number 1, is distinct from other dices in colour.</li>
+<li>The dice with number 1, represents one unit of work and is draggable within its team.</li>
+<li>Drag the dice with number 1, to any of the task and notice changes.</li>
+<li>If there is no dice with number 1, then click “Roll Dice” button.</li>
+<li>The “Roll Dice” button is disabled if there are one or more dices with number 1.</li>
+<li>The “Roll Dice” button is automatically enabled, once all dices with number 1 are dragged to tasks.</li>
+<li>Once the task is in Done column player will need to use dice with number 1 to push it to the backlog of the next team or in the Finished column (in case of last team).</li>
+<li>As a player your job is to finish maximum tasks possible and keep the consistent velocity.</li>
+</ol>
+
+<br /><br /><br />
+Any new feature or improvement requests or bugs report or suggestions regarding these game can be made on following email address
+
+<pre style="color: red;"> aasif dot akram at hotmail dot co dot uk</pre>. 
         <!-- Start of StatCounter Code for Default Guide -->
     <script type="text/javascript">
         var sc_project = 8528192;
