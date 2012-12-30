@@ -15,7 +15,7 @@ String TeamColour
 Integer Number of Dice
 Integer Number of Backlog allowed
 Boolean true/false if backlog is prefilled // relevant only to first team
-Integer Maximum size of Activity -> 7 means any activity can't take more than 7 days to finish
+Integer Maximum size of Activity -> 7 means any activity can't take more than 7 units to finish
 */
 function Team(teamName, teamColour, numberOfDice, numberOfBacklog, backlogFilled, maximumTaskSize) {
     this.teamName = teamName;
@@ -25,6 +25,26 @@ function Team(teamName, teamColour, numberOfDice, numberOfBacklog, backlogFilled
     this.numberOfBacklog = ((numberOfBacklog != null) ? numberOfBacklog : defaultNumberOfBacklog);
     this.backlogFilled = ((backlogFilled != null) ? backlogFilled : defaultBacklogFilled);
     this.maximumTaskSize = ((maximumTaskSize != null) ? maximumTaskSize : defaultMaximumTaskSize);
+
+    /*
+    Counter to measure how many tasks are completed
+    in current sprint
+    */
+    this.unitOfWorkCompleted = 0;
+
+    /* array of completed tasks per sprint
+    */
+    this.unitOfWorkCompletedArray = new Array();
+
+    /*
+    Counter to measure wasted one dice
+    in current sprint
+    */
+    this.wastedOneDice = 0;
+
+    /* array of wasted one dice per sprint
+    */
+    this.wastedOneDiceArray = new Array();
 
     this.teamID = "team_" + teamCounter++;
     this.tasksArray = new Array();
@@ -64,7 +84,6 @@ function getBacklog() {
             this.backlogTasksArray[this.backlogTasksArray.length] = tempTask;
         }
     }
-
     return this.backlogTasksArray;
 }
 
@@ -95,10 +114,11 @@ function getTasksDone() {
 
 /*
 function returns null if tasks is incremented but still in the same team
-function returns task if tasks need to move to next team or finished List
+function returns the task itself if the task need to move to next team or finished List
 */
 
 function findAndUpdateTask(taskID, nextTeamID) {
+
     for (var updateCounter = 0; updateCounter < this.tasksArray.length; updateCounter++) {
         var tempTask = this.tasksArray[updateCounter];
         if (tempTask.taskID == taskID) {
@@ -108,6 +128,10 @@ function findAndUpdateTask(taskID, nextTeamID) {
                     tempTask.Increment();
                 }
             } else {
+                /*
+                Not convinced the update of unitOfWorkCompleted should be happening here
+                */
+                this.unitOfWorkCompleted = this.unitOfWorkCompleted + tempTask.maximumEstimatedUnits;
                 tempTask.numberOfUnitsCompleted = 0;
                 // It is already done ... move to next team
                 this.tasksArray.splice(updateCounter, 1);
@@ -220,6 +244,45 @@ function getVisualObjectofTasksDone(teamID, doneTasksArray, teamColour) {
     return visualObject;
 }
 
+function workCompletedPlotData() {
+   // alert("workCompletedPlotData");
+    var unitOfWorkData = "[";
+
+    for (var unitOfWorkCounter = 0; unitOfWorkCounter < this.unitOfWorkCompletedArray.length; unitOfWorkCounter++) {
+
+        var unitOfWorkCompleted = this.unitOfWorkCompletedArray[unitOfWorkCounter];
+        unitOfWorkData = unitOfWorkData + "[" + unitOfWorkCounter + ", " + unitOfWorkCompleted + "]";
+
+        if (unitOfWorkCounter != this.unitOfWorkCompletedArray.length - 1) {
+            unitOfWorkData = unitOfWorkData + ",";
+        }
+    }
+
+    unitOfWorkData = unitOfWorkData + "]";
+
+    return unitOfWorkData;
+
+}
+
+function wastedDicePlotData() {
+    // alert("workCompletedPlotData");
+    var wastedDiceData = "[";
+
+    for (var wastedDiceCounter = 0; wastedDiceCounter < this.wastedOneDiceArray.length; wastedDiceCounter++) {
+
+        var wastedDiceTemp = this.wastedOneDiceArray[wastedDiceCounter];
+        wastedDiceData = wastedDiceData + "[" + wastedDiceCounter + ", " + wastedDiceTemp + "]";
+
+        if (wastedDiceCounter != this.wastedOneDiceArray.length - 1) {
+            wastedDiceData = wastedDiceData + ",";
+        }
+    }
+
+    wastedDiceData = wastedDiceData + "]";
+
+    return wastedDiceData;
+
+}
 
 Team.prototype.TeamDetails = details;
 Team.prototype.Visual = teamVisualObject;
@@ -229,6 +292,8 @@ Team.prototype.WorkInProgress = getWorkInProgress;
 Team.prototype.Done = getTasksDone;
 Team.prototype.Tasks = getTasks;
 Team.prototype.FindAndTask = findAndUpdateTask;
+Team.prototype.WorkCompletedData = workCompletedPlotData;
+Team.prototype.WastedDicePlotData = wastedDicePlotData;
 
 /*
 Object Task
@@ -322,10 +387,30 @@ function velocityVisualObject() {
     return visualObject;
 }
 
-function updateTeamTask(teamID, taskID) {
-   
-    //alert(teamID + "  " + taskID);
-    for (i = 0; i < this.teamsArray.length; i++) {
+function velocityPlotData() {
+    //alert("velocityPlotData");
+    var velocityData = "[";
+
+    for (var velocityCounter = 0; velocityCounter < this.velocityArray.length; velocityCounter++) {
+
+        var tempVelocity = this.velocityArray[velocityCounter];
+        velocityData = velocityData + "[" + tempVelocity.sprintNumber + ", " + tempVelocity.taskFinished + "]";
+
+        if (velocityCounter != this.velocityArray.length - 1) {
+            velocityData = velocityData + ",";
+        }
+    }
+
+    velocityData = velocityData + "]";
+
+    //alert(velocityData);
+    return velocityData;
+
+}
+
+function updateTeamTask(teamID, taskID) {   
+    
+    for (var i = 0; i < this.teamsArray.length; i++) {
         var tempTeam = this.teamsArray[i];
         if (tempTeam.teamID == teamID) {
 
@@ -366,7 +451,7 @@ function updateTeamTask(teamID, taskID) {
     if (this.teamsArray[0].Backlog().length < 3) {
         counter = Math.floor(Math.random() * 3) + 1;
         for (var ii = 0; ii < counter; ii++) {
-            var newTask = new Task(Math.floor(Math.random() * 5) + 1);
+            var newTask = new Task(Math.floor(Math.random() * this.teamsArray[0].maximumTaskSize) + 1);
             this.teamsArray[0].AddTask(newTask);
         }
     }
@@ -385,12 +470,45 @@ function lastTeamActivityCounter() {
         this.velocityArray[this.velocityArray.length] = this.currentSprintVelocity;
         this.lastTeamActivityInCurrentSprint = 0;
         //alert("5 Activities Done");
+        this.TeamUnitOfWorkCompletedPerSprint();
+        this.TeamWastedOnceDicePerSprint();
         return;
     }
 
     this.lastTeamActivityInCurrentSprint = this.lastTeamActivityInCurrentSprint + 1;
-    
 }
+
+/*
+function to iterate each time to add unit of work completed
+in the current sprint
+reset the unit of work completed
+*/
+function teamUnitOfWorkCompletedPerSprint() {
+    for (var k = 0; k < this.teamsArray.length; k++) {
+        var tempTeam = this.teamsArray[k];
+
+        tempTeam.unitOfWorkCompletedArray[tempTeam.unitOfWorkCompletedArray.length] = tempTeam.unitOfWorkCompleted;
+
+        tempTeam.unitOfWorkCompleted = 0;
+    }
+}
+
+/*
+function to iterate each time to add wasted one dice
+in the current sprint
+reset the wasted one dice
+*/
+
+function teamWastedOnceDicePerSprint() {
+    for (var m = 0; m < this.teamsArray.length; m++) {
+        var tempTeam = this.teamsArray[m];
+
+        tempTeam.wastedOneDiceArray[tempTeam.wastedOneDiceArray.length] = tempTeam.wastedOneDice;
+
+        tempTeam.wastedOneDice = 0;
+    }
+}
+
 
 OnesGame.prototype.Teams = getTeams;
 OnesGame.prototype.AddTeam = addTeam;
@@ -398,7 +516,10 @@ OnesGame.prototype.Visual = gameVisualObject;
 OnesGame.prototype.UpdateTeamTask = updateTeamTask;
 OnesGame.prototype.FinishedTasks = finishedTasksVisualObject;
 OnesGame.prototype.Velocity = velocityVisualObject;
+OnesGame.prototype.VelocityData = velocityPlotData;
 OnesGame.prototype.LastTeamActivityCounter = lastTeamActivityCounter;
+OnesGame.prototype.TeamUnitOfWorkCompletedPerSprint = teamUnitOfWorkCompletedPerSprint;
+OnesGame.prototype.TeamWastedOnceDicePerSprint = teamWastedOnceDicePerSprint;
 
 function Velocity(sprintNumberValue, taskFinishedValue) {
     this.sprintNumber = sprintNumberValue;

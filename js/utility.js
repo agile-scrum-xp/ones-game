@@ -16,7 +16,7 @@
             return "pink";
             break;
         case 5:
-            return "purple";
+            return "AliceBlue";
             break;
         case 6:
             return "brown";
@@ -25,7 +25,7 @@
             return "LightSlateGray";
             break;
         case 8:
-            return "AliceBlue";
+            return "purple";
             break;
         case 9:
             return "Aquamarine";
