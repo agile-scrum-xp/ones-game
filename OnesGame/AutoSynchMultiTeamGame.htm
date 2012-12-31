@@ -1,0 +1,574 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Synchronised Multi-player One's Game</title>
+    <meta name="keywords" content="SCRUM, Agile, Kanban, Project Management, JavaScript, Ones Game" />
+    <meta name="description" content="Free JavaScript Games to learn and practice Agile, SCRUM and KanBan concepts" />
+    <link rel="stylesheet" href="css/default.css" />
+
+    <script src="../js/jquery-1.8.3.js" type="text/javascript"></script>
+
+    <script src="../js/jquery-ui-1.9.2.custom.js" type="text/javascript"></script>
+
+    <script src="js/model.js" type="text/javascript"></script>
+
+    <script src="js/utility.js" type="text/javascript"></script>
+
+    <script type="text/javascript">
+
+        var newGameTeamNumber = 4; 
+        var onesGame = null;
+        var updateElement = "#gameSnapshot";
+        var newGame = true;
+
+        var synchGame = true;
+        var oneDice = 0;
+
+        var onceDiceArray = new Array();
+        
+        var tempOneDiceID = "";
+
+        $(document).ready(function () {
+        
+        
+        $('#autoTestButton').click(function () {            
+            setInterval(function(){autoGame()},2000);
+        });
+
+            //$('.roller').attr('disabled', 'disabled');
+            $('#roll2').click(function () {
+                //alert("roll2 clicked " + newGame);
+
+                $("#roll2").attr('disabled', 'disabled');
+                onesGame = null;
+                newGame = true;
+
+                // alert("roll2 clicked " + newGame);
+                $("#dice").html("<br/>");
+                $("#team_table").html("<br/>");
+                $("#finishedTasks #finished_table").html("<br/>");
+                $("#velocityTasks #velocity_table").html("<br/>");
+
+                $('.roller').removeAttr('disabled');
+                oneDice = 0;
+                createGame(updateElement, newGameTeamNumber);
+                newGame = false;
+                createDivForTeams();
+                $('#gameSnapshotHeader').attr('colspan', newGameTeamNumber);
+
+                //diceRollerHeader
+                // Each team has its own Dice Roller
+                // disable the global dice roller and reset button
+                $('#diceRollerHeader').attr('colspan', newGameTeamNumber - 1);
+
+                if (synchGame == false) {
+                    $("#diceRollerButton").attr('disabled', 'disabled');
+                    $("#resetButton").attr('disabled', 'disabled');
+                }
+
+                synchDiceRolling();
+                setInterval(function () { autoGame() }, 2000);
+                 
+            });
+
+            //resetButtonHeader
+            $('#resetButton').click(function () {
+                oneDice = 0;
+                $("#diceRollerButton").removeAttr('disabled');
+
+            });
+
+            $('button.roller').live("click", function (event) {                           
+               
+                if (synchGame == true) {
+                    synchDiceRolling();
+                } else {
+                    // ID of the button
+                    // which generated event   
+                    var sourceButtonID = "#" + $(this).attr("id");
+                    nonSynchDiceRolling(sourceButtonID);
+                }
+
+            });
+            /*
+            $('#diceRollerButton').live("click", function (event) {
+            var sourceButtonID = "#" + $(this).attr("id");
+            alert(sourceButtonID);
+            synchDiceRolling();
+            });
+            */
+            
+            // This is key to make dynamically created elements draggable
+            $('img.one').live('mouseenter', function () {
+                var parentID = $(this).parent().parent().attr("id");
+                //alert(parentID);
+                var $this = $(this);
+                if (!$this.is(':data(draggable)')) {
+                    $this.draggable({
+                        revert: "invalid",
+                        revertDuration: 0,
+                        helper: 'original',
+                        opacity: 0.75,
+                        containment: "#" + parentID
+                    });
+                }
+
+            });
+        });
+
+        // automationTest
+        
+        function autoGame(){            
+            // Find all images with class one attribute
+            var oneDiceImages = $(".one");
+            
+            var tempMessage = "";
+            
+            if(oneDiceImages.length > 0) {
+                // Pick the first image 
+                // retrieve the ID dice_2_team_0
+                // split the ID to get Team ID i.e 0
+                var imageIDSplitArray = $(oneDiceImages[0]).attr("id").split("_");
+                
+                
+
+                var counter = imageIDSplitArray[3];
+                
+                var teamNumber = parseInt(counter)  + 1;
+                tempMessage = tempMessage + "Task from";
+                
+                var teamArrays = onesGame.Teams();
+                
+                var doneTasksArray = teamArrays[counter].Done();
+                var workInProgressTasksArray = teamArrays[counter].WorkInProgress();            
+                var backlogTasksArray = teamArrays[counter].Backlog();
+                
+                var tempTaskID = "";
+                
+                if(doneTasksArray.length > 0){
+                    //alert();
+                    tempTaskID = doneTasksArray[0].taskID;
+
+                    tempMessage = tempMessage + "'Done' to next stage";
+                
+                } else if(workInProgressTasksArray.length > 0){
+                    //alert(workInProgressTasksArray[0].taskID);
+                    //maximumEstimatedUnits
+                    //numberOfUnitsCompleted
+
+                    var maximumEstimatedUnitsTemp = workInProgressTasksArray[0].maximumEstimatedUnits;
+                    var numberOfUnitsCompletedTemp = workInProgressTasksArray[0].numberOfUnitsCompleted;
+
+                    tempTaskID = workInProgressTasksArray[0].taskID;
+                    if ((maximumEstimatedUnitsTemp - numberOfUnitsCompletedTemp) == 1) {
+                        tempMessage = tempMessage + " 'Work In Progress' to 'Done'";
+                    } else {
+                        var tempIncrementedUnits = parseInt(numberOfUnitsCompletedTemp) + 1;
+                        tempMessage = tempMessage + " " + numberOfUnitsCompletedTemp + "==>" + tempIncrementedUnits;
+                    }
+                } 
+                else if(backlogTasksArray.length > 0){
+                    //alert(backlogTasksArray[0].taskID);
+                    tempTaskID = backlogTasksArray[0].taskID;
+
+                    var maximumEstimatedUnitsTemp = backlogTasksArray[0].maximumEstimatedUnits;
+                    var numberOfUnitsCompletedTemp = backlogTasksArray[0].numberOfUnitsCompleted;
+
+                    if (maximumEstimatedUnitsTemp == 1) {
+                        tempMessage = tempMessage + " 'Backlog' to 'Done'";
+                    } else {
+                        tempMessage = tempMessage + " 'Backlog' to 'Work In Progress'";
+                    }
+                }
+
+                var teamNotificationDiv = "#div_team_" + counter + "_team_notification";
+
+                // Looking for the notification div for each team
+                // "#div_team_0_team_notification"
+                // It is working but text is bit too big
+                $(teamNotificationDiv).html(tempMessage);
+
+                // No Need to Increment the main message
+                //$("#automationTest").html(tempMessage);
+                
+                // remove One Dice
+                $(oneDiceImages[0]).remove();
+                // Method takes team ID team_0, task ID task-2
+                onesGame.UpdateTeamTask(imageIDSplitArray[2] + "_" + imageIDSplitArray[3], tempTaskID);
+           
+                    //Changed
+                    addVisualTeams();
+                    
+                    //$(ui.draggable).remove();
+                    
+                    //updateDroppable(team);
+                    $("#finishedTasks #finished_table").html(onesGame.FinishedTasks());
+                    $("#velocityTasks #velocity_table").html(onesGame.Velocity());
+            } else if(oneDiceImages.length == 0){
+                synchDiceRolling();
+            }
+            
+        }
+        
+        
+        function nonSynchDiceRolling(sourceButtonID) {
+            var parentID = $(sourceButtonID).parent().attr("id"); ;
+
+            var cellIDSplitArray = parentID.split("_");
+            //alert($("#" + parentID + ' _button').attr("class"));
+            
+
+            // Update the tag with dice 
+            // div with id #team_1 containing p with id #dice
+            var updateElement = "#" + parentID + "_dice";
+            //alert('button.roller' + updateElement);
+            updateDice(updateElement, dieRoll(Math.floor(Math.random() * 7) + 1));
+
+            updateElement = "#" + parentID + " #team_table";
+
+            //alert("roll1 clicked " + newGame);
+            if (newGame == true) {
+                createGame(updateElement, 2);
+                newGame = false;
+            }
+
+            /**/
+            if (onceDiceArray.length - 1 == cellIDSplitArray[2]) {
+                onesGame.LastTeamActivityCounter();
+            }
+
+            //alert(onceDiceArray[cellIDSplitArray[2]]);
+            if (onceDiceArray[cellIDSplitArray[2]] > 0) {
+                $(sourceButtonID).attr('disabled', 'disabled');
+            }
+        }
+
+        function synchDiceRolling() {
+
+            var teamArrays = onesGame.Teams();
+            var baseId = "#div_team_";
+           // alert("# synchDiceRolling " + teamArrays.length);
+
+            for (var teamCounter=0; teamCounter < teamArrays.length; teamCounter++) {
+                baseId = baseId + teamCounter + "_dice";
+
+                //alert(baseId);
+                updateDice(baseId, dieRoll(Math.floor(Math.random() * 7) + 1));
+
+                baseId = "#div_team_";
+            }
+
+            // Increment the counter for each click
+                onesGame.LastTeamActivityCounter();            
+
+            if (oneDice > 0) {
+                $("#diceRollerButton").attr('disabled', 'disabled');
+            }
+        }
+
+        function createDivForTeams() {
+            var divForTeams = "";
+
+            var teamArrays = onesGame.Teams();
+            var baseId = "div_team_";
+
+            for (var counter = 0; counter < teamArrays.length; counter++) {
+                onceDiceArray[counter] = 0;
+                baseId = baseId + counter;
+                // alert(baseId);
+                divForTeams = divForTeams + "<td>";
+                divForTeams = divForTeams + "<div id='" + baseId + "'>";
+
+                divForTeams = divForTeams + "<p id='" + baseId + "_dice'/>";
+
+                if (synchGame == true) {
+                // do nothing
+                } else {
+                    divForTeams = divForTeams + "<button id='" + baseId + "_button' class='roller round button'>Roll Dice</button>";                   
+                }
+                
+                divForTeams = divForTeams + "<p id='" + baseId + "_team_table'/>";
+
+                // This was not adding table as sub element of p 
+                // Not sure why but to overcome the problem
+                // add tables to p by calling addVisualTeams()
+                // after the loop
+                //divForTeams = divForTeams + teamArrays[counter].Visual() + "</p>";
+
+                //div_team_0_team_notification
+                divForTeams = divForTeams + "<p id='" + baseId + "_team_notification'></p>";
+                divForTeams = divForTeams + "</div>";
+
+                divForTeams = divForTeams + "</td>";
+                updateDroppable(baseId + "_team_table");
+
+                baseId = "div_team_";
+            }
+            divForTeams = divForTeams + "<td><div id='finishedTasks'><p id='finished_table'/></div></td>"
+            divForTeams = divForTeams + "<td><div id='velocityTasks'><p id='velocity_table'/></div></td>"
+
+            //alert(divForTeams);
+            $(updateElement).html(divForTeams);
+
+            addVisualTeams();
+
+            baseId = "#div_team_";
+            for (var counter1 = 0; counter1 < teamArrays.length; counter1++) {
+                baseId = baseId + counter1;
+                updateDroppable(baseId + " " + baseId + "_team_table");
+                baseId = "#div_team_";
+            }
+        }
+
+        function updateTeamTables() {
+            var teamArrays = onesGame.Teams();
+            var baseId = "#div_team_";
+
+            for (var counter = 0; counter < teamArrays.length; counter++) {
+                baseId = baseId + counter;
+                var updatedBaseId = baseId + "_team_table";
+
+                //$("p" + baseId).replaceWith(teamArrays[counter].Visual());
+                //$("p" + baseId).empty();
+                //$(baseId).find(updatedBaseId).css('background-color', 'red');
+                //alert($(baseId + " " + updatedBaseId).attr("id"));
+
+                //$(baseId).find(updatedBaseId).html("<p>Test2</p>");
+                //$(baseId + " " + updatedBaseId).html("<p>Test</p>");
+                $("#team-" + counter + 1).html(teamArrays[counter].Visual());
+
+                baseId = "#div_team_";
+            }
+
+            baseId = "#div_team_";
+            for (var counter1 = 0; counter1 < teamArrays.length; counter1++) {
+                baseId = baseId + counter1;
+                updateDroppable(baseId + " " + baseId + "_team_table");
+                baseId = "#div_team_";
+            }
+        }
+
+        function addVisualTeams() {
+            var teamArrays = onesGame.Teams();
+            var baseId = "#div_team_";
+            for (var counter = 0; counter < teamArrays.length; counter++) {
+                baseId = baseId + counter + "_team_table";
+                //alert(baseId);
+                //alert(teamArrays[counter].Visual());
+                $(baseId).html(teamArrays[counter].Visual());
+
+                baseId = "#div_team_";
+            }
+        }
+
+        function dieRoll(n) {
+            var result = 0;
+            var diceArray = new Array();
+            for (i = 0; i < n; i++) {
+                value = Math.floor(Math.random() * 6) + 1;
+                diceArray[i] = value;
+            }
+            return diceArray;
+        }
+
+        // diceElement = #div_team_0_dice
+        function updateDice(diceElement, diceArray) {
+
+            
+            var cellIDSplitArray = diceElement.split("_");
+            //alert(cellIDSplitArray);
+
+            var htmlString = "<br/>";
+
+            /* */
+            for (i = 0; i < diceArray.length; i++) {
+                //alert(i + "  -->  " + diceArray[i]);
+                if (diceArray[i] == 1) {
+                    var diceID = "dice_" + i + "_" + cellIDSplitArray[1] + "_" + cellIDSplitArray[2]; 
+                    //alert(diceID);
+                    tempOneDiceID = diceID;
+                    htmlString = htmlString + "<img src='images/dice-" + diceArray[i] + "-th-W.png' id='" + diceID + "' alt='Rolled Dice' height='32' width='32' class='one'/>  ";
+                    
+                    // Incrementing number of Single Dice for a Single Team
+                    oneDice = oneDice + 1;
+                    
+                    // Incrementing number of Single Dice for a Multiple Teams
+                    onceDiceArray[cellIDSplitArray[2]] = onceDiceArray[cellIDSplitArray[2]] + 1;
+                } else {
+                    htmlString = htmlString + "<img src='images/dice-" + diceArray[i] + "-th.png' alt='Rolled Dice' height='32' width='32'/>  ";
+                }
+            }
+            $(diceElement).html(htmlString /* + "<br/>" + tempTeam.Visual()*/);
+        }
+
+        function createGame(team, numberOfTeams) {
+            onesGame = new OnesGame();
+
+            for (i = 0; i < numberOfTeams; i++) {
+                var tempTeam = createTeam(Math.floor(Math.random() * 10) + 1);
+                onesGame.AddTeam(tempTeam);
+
+                var randomBacklog = Math.floor(Math.random() * 6) + 1;
+                for (j = 0; j < randomBacklog; j++) {
+                    tempTeam.AddTask(createTask());
+                }
+            }            
+        }
+
+        function createTeam(indexToGenerateTeamColour) {
+            var tempTeam = new Team("team_" + i, getTeamColour(indexToGenerateTeamColour), Math.floor(Math.random() * 9) + 1, Math.floor(Math.random() * 6) + 1, true, Math.floor(Math.random() * 6) + 1);
+            return tempTeam;
+        }
+
+        function createTask() {
+            var tempTask = new Task(Math.floor(Math.random() * 5) + 1);
+            return tempTask;
+        }
+
+        function updateDroppable(team) {
+            //alert(team);
+            var droppableObjects = $('table').find('td.droppable').droppable({
+
+                hoverClass: "expandTD",
+
+                drop: function (event, ui) { 
+                    // ID of the task on which dice is dropped
+                    // cell_team_0_task-2
+                    var cellIDSplitArray = $(this).attr("id").split("_");
+                    
+                    onceDiceArray[cellIDSplitArray[2]] = onceDiceArray[cellIDSplitArray[2]] - 1;
+                    oneDice = oneDice - 1;
+
+                    //alert(cellIDSplitArray);
+                    
+                    // Method takes team ID team_0, task ID task-2
+                    onesGame.UpdateTeamTask(cellIDSplitArray[1] + "_" + cellIDSplitArray[2], cellIDSplitArray[3]);
+           
+                    //Changed
+                    addVisualTeams();
+                    
+                    $(ui.draggable).remove();
+                    
+                    updateDroppable(team);
+                    $("#finishedTasks #finished_table").html(onesGame.FinishedTasks());
+                    $("#velocityTasks #velocity_table").html(onesGame.Velocity());
+
+                    if (onceDiceArray[cellIDSplitArray[2]] < 1) {
+                        $('#div_team_' + cellIDSplitArray[2] + '_button').removeAttr('disabled');
+                    }
+
+                    if (synchGame == true) {
+                        if (oneDice < 1) {
+                            $("#diceRollerButton").removeAttr('disabled');
+                        }
+                    }
+                    
+                }
+            });
+        }
+        
+    </script>
+
+</head>
+<body>
+    <h1 style="text-align: center;">
+        Ones Game</h1>
+    <h4>
+        <a href="index.html">Back to Main Page</a></h4>
+    <button id="roll2" type="button" class="round button">
+        New Game</button>
+        <!--
+    <button id="autoTestButton" type="button" class="round button">
+        AutoTest</button> -->
+    <table>
+        <caption>
+            For each team tasks are moved automatically with each single One Dice with 2 seconds delay</caption>
+        <tr>
+            <th id="gameSnapshotHeader">
+                Game Snapshot of All Teams
+            </th>
+            <th rowspan="2">
+                Finished Tasks
+            </th>
+            <th rowspan="2">
+                Velocity
+            </th>
+        </tr>
+        <tr>
+            <th id="diceRollerHeader" align="center">
+                <button id="diceRollerButton" type="button" class="roller button round">
+                    Roll Dice</button>
+            </th>
+            <th id="resetButtonHeader" align="center">
+                <button id="resetButton" type="button" class="round button">
+                    Reset Dice Roller</button>
+            </th>
+        </tr>
+        <tr id="gameSnapshot">
+            <!--
+            <td>
+            
+                <div id="team_1">
+                    <button id="roll" type="button" class="roller">
+                        Roll Dice</button>
+                    <p id="dice"/>
+                    <p id="team_table"/>
+                </div>
+               
+            </td>
+             
+            <td>
+                <div id="finishedTasks">
+                    <p id="finished_table"/>
+                </div>
+            </td>
+            -->
+        </tr>
+    </table>
+    
+    <h4 id="automationTest" style="text-align: center;"></h4>
+    <h4>
+        Ones Game</h4>
+    This is the first game of the series. Rules of game are very simple:
+    <ol>
+        <li>Start a new game by clicking a button “New Game” on top left corner.</li>
+        <li>Each team will have a set of dices.</li>
+        <li>Each team will have random number of tasks in the backlog.</li>
+        <li>Each task will take random number of work units to finish.</li>
+        <li>The task with number 5 means it can be finished in 5 units of work.</li>
+        <li>Tasks will move from “Backlog” to “Work in Progress” to “Done” state.</li>
+        <li>Each team will roll dices by clicking “Roll Dice” button.</li>
+        <li>The dice with number 1, is distinct from other dices in colour.</li>
+        <li>The dice with number 1, represents one unit of work and is draggable within its
+            team.</li>
+        <li>Drag the dice with number 1, to any of the task and notice changes.</li>
+        <li>If there is no dice with number 1, then click “Roll Dice” button.</li>
+        <li>The “Roll Dice” button is disabled if there are one or more dices with number 1.</li>
+        <li>The “Roll Dice” button is automatically enabled, once all dices with number 1 are
+            dragged to tasks.</li>
+        <li>Once the task is in Done column player will need to use dice with number 1 to push
+            it to the backlog of the next team or in the Finished column (in case of last team).</li>
+        <li>As a player your job is to finish maximum tasks possible and keep the consistent
+            velocity.</li>
+    </ol>
+    Any new feature or improvement requests or bugs report or suggestions regarding
+    these game can be made on following email address
+    <pre style="color: red;"> aasif.akram@hotmail.co.uk</pre>.
+    <!-- Start of StatCounter Code for Default Guide -->
+
+    <script type="text/javascript">
+        var sc_project = 8528192;
+        var sc_invisible = 1;
+        var sc_security = "98ca0992";
+        var scJsHost = (("https:" == document.location.protocol) ? "https://secure." : "http://www.");
+        document.write("<sc" + "ript type='text/javascript' src='" + scJsHost + "statcounter.com/counter/counter.js'></" + "script>");
+    </script>
+
+    <noscript>
+        <div class="statcounter">
+            <a title="web statistics" href="http://statcounter.com/" target="_blank">
+                <img class="statcounter" src="https://c.statcounter.com/8528192/0/98ca0992/1/" alt="web statistics" /></a></div>
+    </noscript>
+    <!-- End of StatCounter Code for Default Guide -->
+</body>
+</html>
